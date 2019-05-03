@@ -1,0 +1,10 @@
+apiVersion: v1
+appVersion: 11.10.1
+version: 0.1.19
+description: A Helm chart for running the sameersbn/gitlab image of gitlab
+name: docker-gitlab
+keywords: 
+ - gitlab
+ - docker
+home: https://github.com/sameersbn/docker-gitlab
+icon: https://img.icons8.com/color/96/000000/gitlab.png

@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "gitlab-chart.fullname" . }}-primary
+  labels:
+    app: {{ template "gitlab-chart.name" . }}
+    chart: {{ template "gitlab-chart.chart" . }} 
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+spec:
+  # There should only one where the backup are generated
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "gitlab-chart.fullname" . }}
+      role: gitlab-primary
+      release: {{ .Release.Name | quote }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "gitlab-chart.fullname" . }}
+        role: gitlab-primary
+        chart: {{ template "gitlab-chart.chart" . }} 
+        release: {{ .Release.Name | quote }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/gitlab-cm.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/gitlab-secrets.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ template "gitlab-chart.image" . }} 
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          envFrom:
+          - configMapRef:
+              name: {{ template "gitlab-chart.fullname" . }}-cfg
+          - secretRef:
+              name: {{ template "gitlab-chart.fullname" . }}-sec  
+          ports:
+            - name: "http"
+              # The containerPort is fixed to port 80 
+              containerPort: 80
+              protocol: TCP
+            - name: "ssh"
+              # The containerPort is fixed to port 20 
+              containerPort: 22
+              protocol: TCP
+          #command: ["/bin/sh"]
+          #args: ["-c", "while true; do echo hello; sleep 10;done"]
+          livenessProbe: 
+            httpGet: 
+              path: "/users/sign_in"
+              port: 80
+              scheme: "HTTP"
+            initialDelaySeconds: 300
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe: 
+            httpGet: 
+              path: "/users/sign_in"
+              port: 80
+              scheme: "HTTP"
+            initialDelaySeconds: 300
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: "gitlab-data"
+              mountPath: "/home/git/data"
+      serviceAccountName: {{ .Values.serviceAccount.name }} 
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if not .Values.persistence.enabled }}
+      volumes:
+        - name: gitlab-data
+          emptyDir: {}
+      {{- else }}
+      {{- if .Values.persistence.existingClaim }}
+      volumes:
+        - name: gitlab-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim }}
+      {{- end }}
+      {{- end }}
+  {{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+  volumeClaimTemplates:
+    - metadata:
+        name: gitlab-data
+        labels:
+          app: {{ template "gitlab-chart.fullname" . }}
+          role: gitlab-primary
+          chart: {{ template "gitlab-chart.chart" . }} 
+          release: {{ .Release.Name | quote }}
+      spec:
+        accessModes:
+        {{- range .Values.persistence.accessModes }}
+          - {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size | quote }}
+      {{- if .Values.persistence.storageClass }}
+      {{- if (eq "-" .Values.persistence.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: {{ .Values.persistence.storageClass | quote }}
+      {{- end }}
+      {{- end }}
+  {{- end }}

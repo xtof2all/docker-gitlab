@@ -1,0 +1,95 @@
+apiVersion: apps/v1 
+kind: StatefulSet
+metadata:
+  name: {{ template "gitlab-chart.name" . }}-redis
+  labels:
+    app: {{ template "gitlab-chart.name" . }}-redis
+    chart: {{ template "gitlab-chart.chart" . }}
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "gitlab-chart.name" . }}-redis
+      release: {{ .Release.Name | quote }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "gitlab-chart.name" . }}-redis
+        chart: {{ template "gitlab-chart.chart" . }}
+        release: {{ .Release.Name | quote }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name}}-redis
+          image: {{ template "gitlab-chart.redisimage" . }}
+          imagePullPolicy: {{ .Values.redisimage.pullPolicy }}
+          ports:
+          - name: redis
+            containerPort: 6379
+          livenessProbe:
+            exec:
+              command:
+              - redis-cli
+              - ping
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - redis-cli
+              - ping
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: "redis-data"
+              mountPath: "/var/lib/redis"
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if not .Values.redis.persistence.enabled }}
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+      {{- else }}
+      {{- if .Values.redis.persistence.existingClaim }}
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.redis.persistence.existingClaim }}
+      {{- end }}
+      {{- end }}
+  {{- if and .Values.redis.persistence.enabled (not .Values.redis.persistence.existingClaim) }}
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+        labels:
+          app: {{ template "gitlab-chart.name" . }}-redis
+          chart: {{ template "gitlab-chart.chart" . }}
+          release: {{ .Release.Name | quote }}
+      spec:
+        accessModes:
+        {{- range .Values.redis.persistence.accessModes }}
+          - {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.redis.persistence.size | quote }}
+      {{- if .Values.redis.persistence.storageClass }}
+      {{- if (eq "-" .Values.redis.persistence.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: {{ .Values.redis.persistence.storageClass | quote }}
+      {{- end }}
+      {{- end }}
+  {{- end }}

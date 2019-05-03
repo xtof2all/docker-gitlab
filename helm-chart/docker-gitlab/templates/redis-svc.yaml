@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "gitlab-chart.name" . }}-redis
+  labels:
+    app: {{ template "gitlab-chart.name" . }}-redis
+    chart: {{ template "gitlab-chart.chart" . }}
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+{{- with .Values.redis.service.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  type: {{ .Values.redis.service.type }}
+  {{ if eq .Values.redis.service.type "LoadBalancer" -}} {{ if .Values.redis.service.loadBalancerIP -}}
+  loadBalancerIP: {{ .Values.redis.service.loadBalancerIP }}
+  {{ end -}}
+  {{- end -}}
+  ports:
+  - name: redis
+    port: {{ .Values.redis.service.port }}
+    targetPort: redis
+    {{- if .Values.redis.service.nodePort }}
+    nodePort: {{ .Values.redis.service.nodePort }}
+    {{- end }}
+  selector:
+    app: {{ template "gitlab-chart.name" . }}-redis
+    release: {{ .Release.Name | quote }}
