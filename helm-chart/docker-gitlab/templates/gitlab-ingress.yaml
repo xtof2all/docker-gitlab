@@ -1,0 +1,31 @@
+{{- if .Values.ingress.enabled -}}
+{{- $chartName := include "gitlab-chart.name" . -}}
+{{- $servicePort := .Values.service.http.port -}}
+{{- $path := .Values.ingress.path -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ template "gitlab-chart.fullname" . }}
+  labels:
+    app: {{ template "gitlab-chart.name" . }}
+    chart: {{ template "gitlab-chart.chart" . }}
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+  annotations:
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+spec:
+  rules:
+    {{- range $host := .Values.ingress.hosts }}
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: {{ $path }}
+            backend:
+              serviceName: {{ $chartName }}-svc
+              servicePort: {{ $servicePort }}
+    {{- end -}}
+  {{- if .Values.ingress.tls }}
+  tls:
+{{ toYaml .Values.ingress.tls | indent 4 }}
+  {{- end -}}
+{{- end -}}

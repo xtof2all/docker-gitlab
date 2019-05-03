@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "gitlab-chart.fullname" . }}-cfg
+  labels:
+    app: {{ template "gitlab-chart.name" . }}
+    chart: {{ template "gitlab-chart.chart" . }}
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+data:
+  # Timezone
+  TZ: {{ default "" .Values.timezone | quote }}
+  GITLAB_TIMEZONE: {{ default "" .Values.timezone | quote }}
+  # GitLab
+  GITLAB_ROOT_EMAIL: {{ default "" .Values.gitlab.root_email | quote }}
+  GITLAB_HOST: {{ required "A valid domain for gitlab is required" .Values.gitlab.host | quote }}
+  GITLAB_PORT: {{ default "443" .Values.gitlab.port | quote }}
+  GITLAB_SSH_HOST: {{ default "" .Values.gitlab.ssh_host | quote }}
+  GITLAB_SSH_PORT: {{ default "22" .Values.gitlab.ssh_port | quote }}
+  GITLAB_HTTPS: {{ default "true" .Values.gitlab.https | quote }}
+  SSL_SELF_SIGNED: {{ default "true" .Values.gitlab.self_signed | quote }}
+  GITLAB_NOTIFY_ON_BROKEN_BUILDS: {{ default "true" .Values.gitlab.notify_on_broken_builds | quote }}
+  GITLAB_NOTIFY_PUSHER: {{ default "false" .Values.gitlab.notify_pusher | quote }}
+  GITLAB_PIPELINE_SCHEDULE_WORKER_CRON: {{ default "*/5 * * * *" .Values.gitlab.pipeline_schedule_worker_cron | quote }}
+  # GitLab Backup - These should not be part of the general configMap
+  # if we want to got the 1 statefulSet and slave deployments
+  GITLAB_BACKUP_SCHEDULE: "daily"
+  GITLAB_BACKUP_TIME: "04:30"
+  # Monitoring
+  GITLAB_MONITORING_IP_WHITELIST: {{ default "10.0.0.0/8" .Values.gitlab.monitoring.ip_whitelis | quote }}
+  # GitLab DB
+  DB_ADAPTER: {{ default "postgresql" .Values.database.adapter | quote }}
+  DB_HOST: {{ required "A valid DB_HOST is required" .Values.database.host | quote }}
+  DB_PORT: {{ default "5432" .Values.database.port | quote }}
+  DB_USER: {{ required "A valid DB_USER is required" .Values.database.user | quote }}
+  DB_NAME: {{ required "A valid DB_NAME is required" .Values.database.name | quote }} 
+  # SIDEKIQ
+  {{- if .Values.gitlab.sidekiq_memory_killer_max_rss }}
+  SIDEKIQ_MEMORY_KILLER_MAX_RSS: {{ default 1000000 .Values.gitlab.sidekiq_memory_killer_max_rss | quote }}
+  {{- end }}
+  # itLab Redis
+  REDIS_HOST: {{ template "gitlab-chart.name" . }}-redis 
+  REDIS_PORT: {{ default "6379" .Values.redis.service.port | quote }}
+  # Gitlab LDAP Integration
+  LDAP_ENABLED: {{ default "false" .Values.ldap.enabled | quote }}
+  {{- if .Values.ldap.enabled }}
+  LDAP_LABEL: {{ default "GitLab AD" .Values.ldap.label | quote }}
+  LDAP_HOST: {{ required "A valid LDAP_HOST is required" .Values.ldap.host | quote }}
+  LDAP_BIND_DN: {{ required "A bind name is requred" .Values.ldap.bind_dn | quote }}
+  LDAP_BASE: {{ required "A base db is required" .Values.ldap.base | quote }}
+  {{- if .Values.ldap.user_filter }}
+  LDAP_USER_FILTER: {{ .Values.ldap.user_filter | quote }}
+  {{- end }} 
+  {{- if .Values.ldap.port }}
+  LDAP_PORT: {{ .Values.ldap.port | quote }}
+  {{- end }}
+  {{- if .Values.ldap.uid }}
+  LDAP_UID: {{ .Values.ldap.uid | quote }}
+  {{- end }}
+  {{- if .Values.ldap.method }}
+  LDAP_METHOD: {{ .Values.ldap.method | quote }}
+  {{- end }}
+  {{- if .Values.ldap.verify_ssl }}
+  LDAP_VERIFY_SSL: {{ .Values.ldap.verify_ssl | quote }} 
+  {{- end }}
+  {{- if .Values.ldap.active_directory }}
+  LDAP_ACTIVE_DIRECTORY: {{ .Values.ldap.active_directory | quote }} 
+  {{- end }}
+  {{- end }}  
+  # GitLab SMTP settings
+  GITLAB_EMAIL: {{ .Values.gitlabmail.name | quote }}
+  GITLAB_EMAIL_DISPLAY_NAME: {{ .Values.gitlabmail.display_name | quote }}
+  GITLAB_EMAIL_REPLY_TO: {{ .Values.gitlabmail.reply_to | quote }}
+  # SMTP Setting
+  SMTP_ENABLED: {{ default "false" .Values.smtp.enabled | quote }} 
+  {{- if .Values.smtp.enabled }}
+  SMTP_DOMAIN: {{ .Values.smtp.domain | quote }} 
+  SMTP_HOST: {{ .Values.smtp.host | quote }}
+  SMTP_PORT: {{ .Values.smtp.port | quote }}
+  SMTP_USER: {{ .Values.smtp.user | quote }}
+  SMTP_STARTTLS: {{ .Values.smtp.starttls }}
+  SMTP_AUTHENTICATION: {{ .Values.smtp.authentication | quote }}
+  {{- end }}
+  # Your other config vars below
