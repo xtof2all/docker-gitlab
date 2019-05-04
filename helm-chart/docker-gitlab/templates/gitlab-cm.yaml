@@ -24,10 +24,10 @@ data:
   GITLAB_PIPELINE_SCHEDULE_WORKER_CRON: {{ default "*/5 * * * *" .Values.gitlab.pipeline_schedule_worker_cron | quote }}
   # GitLab Backup - These should not be part of the general configMap
   # if we want to got the 1 statefulSet and slave deployments
-  GITLAB_BACKUP_SCHEDULE: "daily"
-  GITLAB_BACKUP_TIME: "04:30"
+  GITLAB_BACKUP_SCHEDULE: {{ default "daily" .Values.gitlab.backup.schedule | quote }}
+  GITLAB_BACKUP_TIME: {{ default "04:30" .Values.gitlab.backup.time | quote }}
   # Monitoring
-  GITLAB_MONITORING_IP_WHITELIST: {{ default "10.0.0.0/8" .Values.gitlab.monitoring.ip_whitelis | quote }}
+  GITLAB_MONITORING_IP_WHITELIST: {{ default "10.0.0.0/8" .Values.gitlab.monitoring.ip_whitelist | quote }}
   # GitLab DB
   DB_ADAPTER: {{ default "postgresql" .Values.database.adapter | quote }}
   DB_HOST: {{ required "A valid DB_HOST is required" .Values.database.host | quote }}

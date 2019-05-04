@@ -1,0 +1,90 @@
+# Helm Chart to deploy docker-gitlab to a kubernetes(openshift) cluster
+
+This directory contains a helm chart to deploy the manifest for docker-gitlab on a kubernetes cluster. It assumes an external postgres is already set-up (which can be installed as a helm chart as well). The redis service is included within the chart (using the recommend gitlab-docker container).
+
+
+
+## Creating the helm chart
+
+From the current directory:
+```
+helm lint docker-gitlab
+helm package docker-gitlab
+```
+
+If you have set-up a repository (such as a local helm museum) you can push this chart artifact:
+```
+helm push docker-gitlab $CHART_REPO
+``` 
+The above is assuming you have already set-up an upstream repo called `$CHART_REPO`
+
+## Usage
+
+* If you want to deploy a local postgres cluster, use the standard postgres helm chart. Note down the username/password.
+* Make a local `helm-values.yaml` file using the `values.yaml` as your guide 
+* Deploy:
+```
+helm upgrade --install -f helm-values.yaml  gitlab docker-gitlab
+```
+
+## Configuration Parameters:
+
+Within the helm chart we have not (yet) all the parameters found in `docker-gitlab`. Below is a table of the parameters which are implemented:
+
+| Helm Value | Docker-gitlab ENV variable |
+|------------|----------------------------|
+| timezone   | `TZ` and `GITLAB_TIMEZONE` |
+| gitlab.root_password | `GITLAB_ROOT_PASSWORD` (secret)|  
+| gitlab.root_email | `GITLAB_ROOT_EMAIL` | 
+| gitlab.host       | `GITLAB_HOST`       | 
+| gitlab.port (443) | `GITLAB_PORT`       | 
+| gitlab.ssh_host   | `GITLAB_SSH_HOST`   | 
+| gitlab.ssh_port (22) | `GITLAB_SSH_PORT`   | 
+| gitlab.https (true) | `GITLAB_HTTPS`      |
+| gitlab.gitlab.self_signed (true) | `SSL_SELF_SIGNED` | 
+| gitlab.notify_on_broken_builds (true) | `GITLAB_NOTIFY_ON_BROKEN_BUILDS` | 
+| gitlab.gitlab.notify_pusher (false) | `GITLAB_NOTIFY_PUSHER` | 
+| gitlab.pipeline_schedule_worker_cron (`*/5 * * * *`) | `GITLAB_PIPELINE_SCHEDULE_WORKER_CRON` | 
+| gitlab.sidekiq_memory_killer_max_rss i(`500000`) | `SIDEKIQ_MEMORY_KILLER_MAX_RSS` | 
+| gitlab.backup.shedule (`daily`) | `GITLAB_BACKUP_SCHEDULE`| 
+| gitlab.backup.time (`04:30`) | `GITLAB_BACKUP_TIME` |
+| gitlab.monitoring.ip_whitelist (`10.0.0.0/8`) | `GITLAB_MONITORING_IP_WHITELIST` | 
+| gitlab.secrets.db_key_base | `GITLAB_SECRETS_DB_KEY_BASE` (secret) |
+| gitlab.secrets.key_base | `GITLAB_SECRETS_SECRET_KEY_BASE` (secret) | 
+| gitlab.secrets.otp_key_base | `GITLAB_SECRETS_OTP_KEY_BASE` (secret) | 
+| database.adapter (`postgresql`) | `DB_ADAPTER` | 
+| database.host | `DB_HOST` |
+| database.port | `DB_PORT` |  
+| database.user | `DB_USER` | 
+| database.pass | `DB_PASS` (secret) | 
+| database.name | `DB_NAME` | 
+| redis.host (calculated) | `REDIS_HOST` | 
+| redis.port (`6379`) | `REDIS_PORT` | 
+| gitlabmail.name | `GITLAB_EMAIL` | 
+| gitlabmail.display_name | `GITLAB_EMAIL_DISPLAY_NAME` | 
+| gitlabmail.reply_to | `GITLAB_EMAIL_REPLY_TO` | 
+| ldap.enabled | ``LDAP_ENABLED` | 
+| ldap.label | `LDAP_LABEL` | 
+| ldap.host | `LDAP_HOST` |
+| ldap.port | `LDAP_PORT` | 
+| ldap.pass | `LDAP_PASS` (secret) |
+| ldap.bind_dn | `LDAP_BIND_DN` |
+| ldap.base | `LDAP_BASE` | 
+| ldap.user_filter | `LDAP_USER_FILTER` |
+| ldap.port | `LDAP_PORT` | 
+| ldap.uid | `LDAP_UID`  |
+| ldap.verify_ssl | `LDAP_VERIFY_SSL` | 
+| ldap.method | `LDAP_METHOD` |
+| ldap.verify_ssl | `LDAP_VERIFY_SSL` |
+| ldap.active_directory | `LDAP_ACTIVE_DIRECTORY` | 
+| smtp.enabled | `SMTP_ENABLED` |
+| smtp.email | `SMTP_EMAIL` |
+| smtp.host | `SMTP_HOST` |
+| smtp.port | `SMTP_PORT` |
+| smtp.user | `SMTP_USER` |
+| smtp.pass | `SMTP_PASS` (
+| smtp.starttls | ` SMTP_STARTTLS` |
+| smtp.authentication | `SMTP_AUTHENTICATION` |
+
+
+
