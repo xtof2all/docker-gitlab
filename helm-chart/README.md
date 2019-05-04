@@ -1,4 +1,4 @@
-# Helm Chart to deploy docker-gitlab to a kubernetes(openshift) cluster
+# Helm Chart to deploy docker-gitlab to a kubernetes (or openshift) cluster
 
 This directory contains a helm chart to deploy the manifest for docker-gitlab on a kubernetes cluster. It assumes an 
 external postgres is already set-up (which can be installed as a helm chart as well). The redis service is included 
@@ -30,7 +30,7 @@ helm upgrade --install -f helm-values.yaml  gitlab docker-gitlab
 
 ## Configuration Parameters:
 
-Within the helm chart we have not (yet) all the parameters found in `docker-gitlab`. Below is a table of the parameters 
+Within the helm chart, we have not (yet) all the parameters found in `docker-gitlab`. Below is a table of the parameters 
 which are implemented:
 
 | Helm Value | Docker-gitlab ENV variable |
